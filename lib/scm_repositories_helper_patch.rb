@@ -57,12 +57,12 @@ module ScmRepositoriesHelperPatch
                 else # Rails 3.1 and above
                     add = submit_tag(l(:button_create_new_repository), :onclick => "$('#repository_operation').val('add');")
                 end
-                svntags.sub!('<br />', ' ' + add + '<br />')
+                svntags.sub!('<em class="info">', ' ' + add + '<em class="info">')
                 svntags << hidden_field_tag(:operation, '', :id => 'repository_operation')
                 unless request.post?
                     path = SubversionCreator.access_root_url(SubversionCreator.default_path(@project.identifier), repository)
                     if SubversionCreator.repository_exists?(@project.identifier) && @project.respond_to?(:repositories)
-                        path << '.' + @project.repositories.select{ |r| r.created_with_scm }.size.to_s
+                        path << '.' + @project.repositories.select{ |r| r.created_with_scm && r.type == "Repository::Subversion" }.size.to_s
                     end
                     if defined? observe_field # Rails 3.0 and below
                         svntags << javascript_tag("$('repository_url').value = '#{escape_javascript(path)}';")
@@ -173,16 +173,13 @@ module ScmRepositoriesHelperPatch
                 else # Rails 3.1 and above
                     add = submit_tag(l(:button_create_new_repository), :onclick => "$('#repository_operation').val('add');")
                 end
-                if gittags.include?('<br />')
-                    gittags.sub!('<br />', ' ' + add + '<br />')
-                else
-                    gittags.sub!('</p>', ' ' + add + '</p>')
-                end
+                gittags.sub!('<em class="info">', ' ' + add + '<em class="info">')
+
                 gittags << hidden_field_tag(:operation, '', :id => 'repository_operation')
                 unless request.post?
                     path = GitCreator.access_root_url(GitCreator.default_path(@project.identifier), repository)
                     if GitCreator.repository_exists?(@project.identifier) && @project.respond_to?(:repositories)
-                        offset = @project.repositories.select{ |r| r.created_with_scm }.size.to_s
+                        offset = @project.repositories.select{ |r| r.created_with_scm  && r.type == "Repository::Git" }.size.to_s
                         if path.sub!(%r{\.git\z}, '.' + offset + '.git').nil?
                             path << '.' + offset
                         end
