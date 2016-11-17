@@ -215,13 +215,25 @@ module ScmRepositoriesControllerPatch
 
         end
 
-        def destroy_with_confirmation
+        def destroy_with_confirmation            
             if @repository.created_with_scm
                 if params[:confirm]
                     unless params[:confirm_with_scm]
                         @repository.created_with_scm = false
+                    else
+                        # Erase files from filesystem
+                        interface = SCMCreator.interface(params[:repository_scm])
+                        path = @repository.root_url            
+                        if @repository.type == "Repository::Subversion"
+                            path.sub!("file://","")
+                        end
+                    
+                        interface.execute(ScmConfig['pre_delete'], path, project) if ScmConfig['pre_delete']
+                        # TODO: should be thtough interface
+                        FileUtils.remove_entry_secure(path, true)
+                        interface.execute(ScmConfig['post_delete'], path, project) if ScmConfig['post_delete']
                     end
-
+                    
                     destroy_without_confirmation
                 end
             else
